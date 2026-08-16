@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Panel de Estudio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0a0a0c; --surface:#141417; --surface-2:#1a1a1e; --surface-hover:#1f1f24;
+    --border:rgba(255,255,255,.07); --border-strong:rgba(255,255,255,.14);
+    --text:#e9e7e2; --text-dim:#87868c; --text-faint:#57565c;
+    --accent:#7c9cf7; --accent-soft:rgba(124,156,247,.13);
+    --pye:#d8a857; --pye-soft:rgba(216,168,87,.13);
+    --arq:#a68bf0; --arq-soft:rgba(166,139,240,.13);
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--sans);background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;}
+  .layout{display:flex;min-height:100vh;}
+
+  /* Sidebar */
+  .sidebar{width:264px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:28px 0;}
+  .sidebar-header{padding:0 24px 22px;margin-bottom:8px;}
+  .sidebar-header h1{font:400 19px/1.2 var(--serif);margin:0;color:var(--text);letter-spacing:.01em;}
+  .nav-item{width:calc(100% - 24px);margin:0 12px 2px;text-align:left;background:none;border:none;color:var(--text-dim);padding:9px 12px;font:500 13.5px var(--sans);cursor:pointer;display:flex;align-items:center;border-radius:9px;transition:background .12s,color .12s;}
+  .nav-item:hover{background:var(--surface-hover);color:var(--text);}
+  .nav-item.active{background:var(--accent-soft);color:var(--text);}
+  .nav-item .dot{width:7px;height:7px;border-radius:50%;margin-right:11px;display:inline-block;flex-shrink:0;}
+  .nav-item .count{margin-left:auto;font-size:11px;color:var(--text-faint);}
+  .cronograma-link{display:block;margin:20px 12px 0;padding:11px 14px;color:var(--text-dim);text-decoration:none;font:500 12.5px var(--sans);border-top:1px solid var(--border);padding-top:18px;transition:color .12s;}
+  .cronograma-link:hover{color:var(--text);}
+
+  /* Main */
+  .main{flex:1;padding:56px 56px 80px;max-width:760px;}
+  .main h2{font:400 26px/1.25 var(--serif);margin:0 0 6px;letter-spacing:.005em;}
+  .main .today{color:var(--text-faint);font:500 12px var(--sans);text-transform:uppercase;letter-spacing:.06em;margin-bottom:36px;}
+  .nav-btn{background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;transition:border-color .12s,color .12s;}
+  .nav-btn:hover{border-color:var(--border-strong);color:var(--text);}
+  .nav-btn:disabled{opacity:.3;cursor:default;}
+
+  /* Tarjeta unificada de semana (home) */
+  .week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;}
+  .week-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+  .week-card-head .week-label{font:500 12px var(--sans);text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);}
+  .week-nav{display:flex;align-items:center;gap:8px;}
+  .materia-rows{display:flex;flex-direction:column;}
+  .materia-row{border-top:1px solid var(--border);padding:22px 0;}
+  .materia-row:first-child{border-top:none;padding-top:0;}
+  .materia-row:last-child{padding-bottom:0;}
+  .materia-row-head{display:flex;align-items:center;gap:9px;margin-bottom:10px;cursor:pointer;width:fit-content;}
+  .materia-row-head .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .materia-row-head .m-name{font:600 11.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);transition:color .12s;}
+  .materia-row-head:hover .m-name{color:var(--text);}
+  .materia-row .tema{font:400 18px/1.5 var(--serif);margin-bottom:12px;color:var(--text);}
+  .see-material-link{background:none;border:none;color:var(--text-faint);font:500 12px var(--sans);cursor:pointer;padding:0;transition:color .12s;}
+  .see-material-link:hover{color:var(--accent);}
+  .materials{display:flex;flex-direction:column;gap:2px;}
+  .materials a{display:block;padding:9px 4px;color:var(--text-dim);text-decoration:none;font:500 13px var(--sans);border-bottom:1px solid var(--border);transition:color .12s;}
+  .materials a:last-child{border-bottom:none;}
+  .materials a:hover{color:var(--accent);}
+  .materials .empty{padding:4px;font:italic 13px var(--sans);color:var(--text-faint);}
+  .badge-current{display:inline-block;font:600 10px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--accent);border:1px solid currentColor;padding:2px 8px;border-radius:20px;margin-left:10px;vertical-align:middle;}
+
+  /* Calendario (home) */
+  .calendar-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:32px;margin-top:24px;}
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+  .cal-month-label{font:400 16px var(--serif);text-transform:capitalize;color:var(--text);}
+  .cal-dow-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:8px;}
+  .cal-dow{text-align:center;font:600 10px var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:24px;}
+  .cal-day{background:none;border:none;color:var(--text-dim);cursor:pointer;aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;font:500 13px var(--sans);transition:background .12s;}
+  .cal-day:hover{background:var(--surface-hover);}
+  .cal-day.today{border:1px solid var(--border-strong);color:var(--text);}
+  .cal-day.selected{background:var(--accent-soft);color:var(--text);}
+  .cal-day.empty{visibility:hidden;cursor:default;}
+  .cal-dot{position:absolute;bottom:5px;width:4px;height:4px;border-radius:50%;background:var(--accent);}
+  .cal-tasks{border-top:1px solid var(--border);padding-top:20px;}
+  .cal-selected-label{font:500 12px var(--sans);text-transform:capitalize;color:var(--text-dim);margin-bottom:12px;}
+  .cal-task-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+  .cal-task-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--surface-2);border-radius:8px;font:500 13px var(--sans);color:var(--text);}
+  .cal-task-del{background:none;border:none;color:var(--text-faint);cursor:pointer;font-size:16px;line-height:1;padding:0 2px;flex-shrink:0;transition:color .12s;}
+  .cal-task-del:hover{color:var(--text);}
+  .cal-add-row{display:flex;gap:8px;}
+  .cal-add-row input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font:500 13px var(--sans);outline:none;transition:border-color .12s;}
+  .cal-add-row input:focus{border-color:var(--border-strong);}
+  .cal-add-row input::placeholder{color:var(--text-faint);}
+
+  /* Vista de materia completa */
+  .materia-page-head{display:flex;align-items:center;gap:11px;margin-bottom:8px;}
+  .materia-page-head .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .materia-page-head h2{margin:0;}
+  .back-link{background:none;border:none;color:var(--text-faint);font:500 13px var(--sans);cursor:pointer;padding:0 0 24px;display:inline-block;transition:color .12s;}
+  .back-link:hover{color:var(--accent);}
+  .tema-group{margin-top:36px;}
+  .tema-group:first-child{margin-top:32px;}
+  .tema-group-label{font:600 11.5px var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--text-dim);margin-bottom:14px;}
+  .week-rows{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+  .week-row{padding:20px 24px;border-top:1px solid var(--border);}
+  .week-row:first-child{border-top:none;}
+  .week-row.is-current{background:var(--accent-soft);}
+  .week-row.is-past{opacity:.45;}
+  .week-row-top{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  .week-row .wr-range{font:500 11px var(--sans);color:var(--text-faint);white-space:nowrap;}
+  .week-row .wr-tema{font:400 16px/1.5 var(--serif);margin:0 0 10px;color:var(--text);}
+  .week-row .materials{flex-direction:column;}
+  .week-row .materials a{padding:8px 0;}
+
+  .dot-prog3{background:var(--accent);}
+  .dot-pye{background:var(--pye);}
+  .dot-arq{background:var(--arq);}
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>Panel de Estudio</h1>
+    </div>
+    <div id="sidebar-content"></div>
+    <a class="cronograma-link" href="../Cronograma%20General%202026-2.pdf" target="_blank">Cronograma general (PDF)</a>
+  </nav>
+
+  <main class="main" id="main"></main>
+</div>
+
+<script>
+// ---------- Rutas base ----------
+const BASE = {
+  prog3Guias:  "C:\\Users\\pc\\Desktop\\Study for Claude\\Guias de Estudio Programación 3\\",
+  arqGuias:    "C:\\Users\\pc\\Desktop\\Study for Claude\\Guias de Estudio Arquitectura de Computadoras\\",
+  pyeApuntes:  "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\Apuntes\\",
+  pyeEjerc:    "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\Ejercicios\\",
+  pyeRaiz:     "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\",
+};
+
+function toFileUri(path){
+  const parts = path.replace(/\\/g,'/').split('/');
+  const encoded = parts.map((seg,i)=> i===0 ? seg : encodeURIComponent(seg));
+  return 'file:///' + encoded.join('/');
+}
+function mat(base, filename, label){
+  return { label: label, href: toFileUri(base + filename) };
+}
+
+// ---------- Datos: Programación 3 ----------
+const prog3 = {
+  key:'prog3', name:'Programación 3', dotClass:'dot-prog3', color:'#5b8cff',
+  weeks:[
+    { id:'p3-1', range:'ago (inicio)', start:'2026-08-01', end:'2026-08-10',
+      tema:'Cap. 1 — 1.1 El problema, diseño y análisis del algoritmo de Gale-Shapley (p.1-12); 1.2 Cinco problemas representativos',
+      materials:[ mat(BASE.prog3Guias,'Semana 01 - Emparejamiento Estable - Guia.pdf','Guía de la semana'),
+                  mat(BASE.prog3Guias,'Practico1_EmparejamientoEstable.pdf','Práctico 1 resuelto') ] },
+    { id:'p3-2', range:'11-23 ago', start:'2026-08-11', end:'2026-08-23',
+      tema:'Cap. 2 — 2.1 Tratabilidad computacional; 2.2 Orden de crecimiento asintótico; 2.3 Implementación de Gale-Shapley con listas/arrays; 2.4 Tiempos de ejecución comunes (p.65-67)', materials:[] },
+    { id:'p3-3', range:'24 ago - 6 sep', start:'2026-08-24', end:'2026-09-06',
+      tema:'Cap. 3 — 3.1 Definiciones y aplicaciones; 3.2 Conectividad y recorridas; 3.3 Colas/pilas; 3.4 Bipartición (BFS); 3.5 Conectividad en dirigidos; 3.6 DAGs y orden topológico (p.104-107)', materials:[] },
+    { id:'p3-4', range:'7-27 sep', start:'2026-09-07', end:'2026-09-27',
+      tema:'Cap. 4 — 4.1 Scheduling de intervalos (greedy stays ahead); 4.2 Minimizar lateness (exchange argument); 4.4 Camino más corto; 4.5 Árbol de cubrimiento mínimo; 4.6 Kruskal con Union-Find (p.183-188)', materials:[] },
+    { id:'p3-5', range:'28 sep - 4 oct', start:'2026-09-28', end:'2026-10-04',
+      tema:'Cap. 5 — 5.1 Recurrencia de Mergesort; 5.2 Más relaciones de recurrencia; 5.3 Contar inversiones; 5.4 Par de puntos más cercanos (p.242-246)', materials:[] },
+    { id:'p3-6', range:'5-18 oct', start:'2026-10-05', end:'2026-10-18',
+      tema:'Programación Dinámica', materials:[] },
+    { id:'p3-7', range:'19-25 oct', start:'2026-10-19', end:'2026-10-25',
+      tema:'Mejoramiento Iterativo — flujo máximo y corte mínimo (Ford-Fulkerson) + Transformar y Conquistar', materials:[] },
+    { id:'p3-8', range:'26 oct - 8 nov', start:'2026-10-26', end:'2026-11-08',
+      tema:'Clases P y NP, NP-Completitud, reducciones y manejo de problemas intratables', materials:[] },
+    { id:'p3-9', range:'9-15 nov', start:'2026-11-09', end:'2026-11-15',
+      tema:'Repaso dirigido — Módulos 6 y 8', materials:[] },
+    { id:'p3-10', range:'16-22 nov', start:'2026-11-16', end:'2026-11-22',
+      tema:'Simulacro — parciales viejos de Prog3', materials:[] },
+    { id:'p3-11', range:'23-29 nov', start:'2026-11-23', end:'2026-11-29',
+      tema:'Simulacro — exámenes finales 2020-2022', materials:[] },
+    { id:'p3-12', range:'30 nov - 6 dic', start:'2026-11-30', end:'2026-12-06',
+      tema:'Simulacro — exámenes finales 2023-2024', materials:[] },
+    { id:'p3-13', range:'7-13 dic', start:'2026-12-07', end:'2026-12-13',
+      tema:'Repaso final — solo dudas puntuales', materials:[] },
+    { id:'p3-14', range:'14-31 dic (estimado)', start:'2026-12-14', end:'2026-12-31',
+      tema:'Examen Prog3', materials:[] },
+  ],
+  temas:[
+    { label:'Contenido curricular (según programa oficial de la UC)', items:[
+      { tema:'1. Emparejamiento Estable — 1.1 problema, diseño y análisis de Gale-Shapley (p.1-12); 1.2 cinco problemas representativos', start:'2026-08-01', end:'2026-08-10',
+        materials:[ mat(BASE.prog3Guias,'Semana 01 - Emparejamiento Estable - Guia.pdf','Guía de la semana'),
+                    mat(BASE.prog3Guias,'Practico1_EmparejamientoEstable.pdf','Práctico 1 resuelto') ] },
+      { tema:'1. Análisis de Algoritmos — 2.1 tratabilidad; 2.2 orden de crecimiento; 2.3 implementación GS; 2.4 tiempos de ejecución comunes (p.65-67)', start:'2026-08-11', end:'2026-08-23', materials:[] },
+      { tema:'2. Grafos — 3.1 definiciones; 3.2 conectividad/recorridas; 3.3 colas/pilas; 3.4 bipartición (BFS); 3.5 dirigidos; 3.6 DAGs y orden topológico (p.104-107)', start:'2026-08-24', end:'2026-09-06', materials:[] },
+      { tema:'4. Algoritmos Ávidos — 4.1 scheduling de intervalos; 4.2 minimizar lateness; 4.4 camino más corto; 4.5 árbol de cubrimiento mínimo; 4.6 Kruskal/Union-Find (p.183-188)', start:'2026-09-07', end:'2026-09-27', materials:[] },
+      { tema:'4. Divide y Vencerás — 5.1 recurrencia Mergesort; 5.2 más relaciones de recurrencia; 5.3 contar inversiones; 5.4 par de puntos más cercanos (p.242-246)', start:'2026-09-28', end:'2026-10-04', materials:[] },
+      { tema:'4. Programación Dinámica ⚠️ punto débil', start:'2026-10-05', end:'2026-10-18', materials:[] },
+      { tema:'4. Mejoramiento Iterativo — flujo máximo en redes, corte de capacidad mínima (Ford-Fulkerson)', start:'2026-10-19', end:'2026-10-22', materials:[] },
+      { tema:'4. Transformar y Conquistar', start:'2026-10-23', end:'2026-10-25', materials:[] },
+      { tema:'5. Cota inferior de ordenamiento, Clases P y NP, NP-Completitud, reducciones y manejo de intratables ⚠️ punto débil', start:'2026-10-26', end:'2026-11-08', materials:[] },
+    ]},
+    { label:'Repaso y evaluación', items:[
+      { tema:'Repaso dirigido — Módulos 6 y 8', start:'2026-11-09', end:'2026-11-15', materials:[] },
+      { tema:'Simulacro — parciales viejos de Prog3', start:'2026-11-16', end:'2026-11-22', materials:[] },
+      { tema:'Simulacro — exámenes finales 2020-2022', start:'2026-11-23', end:'2026-11-29', materials:[] },
+      { tema:'Simulacro — exámenes finales 2023-2024', start:'2026-11-30', end:'2026-12-06', materials:[] },
+      { tema:'Repaso final — solo dudas puntuales', start:'2026-12-07', end:'2026-12-13', materials:[] },
+      { tema:'🔴 Examen Prog3 (fecha estimada, a confirmar)', start:'2026-12-14', end:'2026-12-31', materials:[] },
+    ]},
+  ]
+};
+
+// ---------- Datos: Probabilidad y Estadística ----------
+const pye = {
+  key:'pye', name:'Probabilidad y Estadística', dotClass:'dot-pye', color:'#e0a94a',
+  weeks:[
+    { id:'pye-0', range:'hasta 16 ago', start:'2026-08-01', end:'2026-08-16',
+      tema:'Plan general — arranca la semana del 17/08',
+      materials:[ mat(BASE.pyeRaiz,'plan_de_estudio.pdf','Plan de estudio completo'),
+                  mat(BASE.pyeRaiz,'progreso.pdf','Registro de progreso') ] },
+    { id:'pye-1', range:'17-30 ago', start:'2026-08-17', end:'2026-08-30',
+      tema:'Bloque 1.1-1.3 — Combinatoria, Axiomas de Kolmogorov, Prob. condicional/Bayes',
+      materials:[ mat(BASE.pyeApuntes,'01_combinatoria.pdf','Apunte — Combinatoria'),
+                  mat(BASE.pyeEjerc,'01_combinatoria_modelo.pdf','Ejercicios modelo — Combinatoria'),
+                  mat(BASE.pyeEjerc,'Practico1_resuelto.pdf','Práctico 1 resuelto') ] },
+    { id:'pye-2', range:'31 ago - 13 sep', start:'2026-08-31', end:'2026-09-13',
+      tema:'Bloque 1.4-1.6 — Variable aleatoria, discretas, continuas', materials:[] },
+    { id:'pye-3', range:'14-27 sep', start:'2026-09-14', end:'2026-09-27',
+      tema:'Bloque 1.7 — Vectores aleatorios', materials:[] },
+    { id:'pye-4', range:'28 sep - 4 oct', start:'2026-09-28', end:'2026-10-04',
+      tema:'Bloque 2.1 — Valor Esperado, Varianza, Momentos', materials:[] },
+    { id:'pye-5', range:'5-11 oct', start:'2026-10-05', end:'2026-10-11',
+      tema:'Bloque 2.2 — Covarianza, Ley de Grandes Números', materials:[] },
+    { id:'pye-6', range:'12-18 oct', start:'2026-10-12', end:'2026-10-18',
+      tema:'Bloque 2.3 — Estimación puntual (momentos, EMV)', materials:[] },
+    { id:'pye-7', range:'19-25 oct', start:'2026-10-19', end:'2026-10-25',
+      tema:'Bloque 2.4 — Teorema Central del Límite', materials:[] },
+    { id:'pye-8', range:'26 oct - 1 nov', start:'2026-10-26', end:'2026-11-01',
+      tema:'Bloque 2.5 — Intervalos de Confianza', materials:[] },
+    { id:'pye-9', range:'2-8 nov', start:'2026-11-02', end:'2026-11-08',
+      tema:'Bloque 2.6 — Test de Hipótesis y Potencia', materials:[] },
+    { id:'pye-10', range:'9-15 nov', start:'2026-11-09', end:'2026-11-15',
+      tema:'Bloque 2.7 — p-valor, Kolmogorov-Smirnov, Lilliefors', materials:[] },
+    { id:'pye-11', range:'16-22 nov', start:'2026-11-16', end:'2026-11-22',
+      tema:'Simulacro — 1er parcial viejo cronometrado', materials:[] },
+    { id:'pye-12', range:'23-29 nov', start:'2026-11-23', end:'2026-11-29',
+      tema:'Simulacro — 2do parcial viejo cronometrado', materials:[] },
+    { id:'pye-13', range:'30 nov - 6 dic', start:'2026-11-30', end:'2026-12-06',
+      tema:'Simulacro — exámenes finales viejos', materials:[] },
+    { id:'pye-14', range:'7-13 dic', start:'2026-12-07', end:'2026-12-13',
+      tema:'Repaso final — solo dudas puntuales', materials:[] },
+    { id:'pye-15', range:'14-31 dic (estimado)', start:'2026-12-14', end:'2026-12-31',
+      tema:'Examen PyE', materials:[] },
+  ],
+  temas:[
+    { label:'Referencias generales', items:[
+      { tema:'Plan de estudio y registro de progreso', start:null, end:null,
+        materials:[ mat(BASE.pyeRaiz,'plan_de_estudio.pdf','Plan de estudio completo'),
+                    mat(BASE.pyeRaiz,'progreso.pdf','Registro de progreso') ] },
+    ]},
+    { label:'Bloque 1 — Primer Parcial', items:[
+      { tema:'1.1 Combinatoria', start:'2026-08-17', end:'2026-08-30',
+        materials:[ mat(BASE.pyeApuntes,'01_combinatoria.pdf','Apunte — Combinatoria'),
+                    mat(BASE.pyeEjerc,'01_combinatoria_modelo.pdf','Ejercicios modelo — Combinatoria'),
+                    mat(BASE.pyeEjerc,'Practico1_resuelto.pdf','Práctico 1 resuelto') ] },
+      { tema:'1.2 Axiomas de Kolmogorov y probabilidad', start:'2026-08-17', end:'2026-08-30', materials:[] },
+      { tema:'1.3 Probabilidad condicional e independencia (Bayes)', start:'2026-08-17', end:'2026-08-30', materials:[] },
+      { tema:'1.4 Variable aleatoria y función de distribución', start:'2026-08-31', end:'2026-09-13', materials:[] },
+      { tema:'1.5 Variables aleatorias discretas', start:'2026-08-31', end:'2026-09-13', materials:[] },
+      { tema:'1.6 Variables aleatorias absolutamente continuas', start:'2026-08-31', end:'2026-09-13', materials:[] },
+      { tema:'1.7 Distribución de vectores aleatorios', start:'2026-09-14', end:'2026-09-27', materials:[] },
+    ]},
+    { label:'Bloque 2 — Segundo Parcial', items:[
+      { tema:'2.1 Valor Esperado, Varianza, Momentos', start:'2026-09-28', end:'2026-10-04', materials:[] },
+      { tema:'2.2 Covarianza, Ley de Grandes Números, Modelos Lineales', start:'2026-10-05', end:'2026-10-11', materials:[] },
+      { tema:'2.3 Estimación puntual (momentos y máxima verosimilitud)', start:'2026-10-12', end:'2026-10-18', materials:[] },
+      { tema:'2.4 Teorema Central del Límite', start:'2026-10-19', end:'2026-10-25', materials:[] },
+      { tema:'2.5 Intervalos de Confianza', start:'2026-10-26', end:'2026-11-01', materials:[] },
+      { tema:'2.6 Test de Hipótesis y Potencia', start:'2026-11-02', end:'2026-11-08', materials:[] },
+      { tema:'2.7 p-valor, Distribución Empírica, Bondad de Ajuste', start:'2026-11-09', end:'2026-11-15', materials:[] },
+    ]},
+    { label:'Repaso y evaluación', items:[
+      { tema:'Simulacro — 1er parcial viejo cronometrado', start:'2026-11-16', end:'2026-11-22', materials:[] },
+      { tema:'Simulacro — 2do parcial viejo cronometrado', start:'2026-11-23', end:'2026-11-29', materials:[] },
+      { tema:'Simulacro — exámenes finales viejos', start:'2026-11-30', end:'2026-12-06', materials:[] },
+      { tema:'Repaso final — solo dudas puntuales', start:'2026-12-07', end:'2026-12-13', materials:[] },
+      { tema:'🔴 Examen PyE (fecha estimada, a confirmar)', start:'2026-12-14', end:'2026-12-31', materials:[] },
+    ]},
+  ]
+};
+
+// ---------- Datos: Arquitectura de Computadoras ----------
+const arq = {
+  key:'arq', name:'Arquitectura de Computadoras', dotClass:'dot-arq', color:'#8b5bff',
+  weeks:[
+    { id:'arq-0', range:'3-9 ago', start:'2026-08-03', end:'2026-08-09',
+      tema:'Notas: Sistemas de Numeración, Códigos y Errores — Práctico 0: Sistemas de Numeración (Taller 0)',
+      materials:[ mat(BASE.arqGuias,'Semana 01 - Sistemas de Numeracion y Codigos de Error.pdf','Guía de la semana'),
+                  mat(BASE.arqGuias,'Practico 0 - Resuelto Paso a Paso.pdf','Práctico 0 resuelto') ] },
+    { id:'arq-1', range:'10-16 ago', start:'2026-08-10', end:'2026-08-16',
+      tema:'Notas: Representación Interna de Datos — Práctico 1: Detección y corrección de errores, Repr. Interna de Datos (Taller 1)',
+      materials:[ mat(BASE.arqGuias,'Semana 02 - Representacion Interna de Datos.pdf','Guía de la semana'),
+                  mat(BASE.arqGuias,'Practico 1 - Resuelto Paso a Paso.pdf','Práctico 1 resuelto') ] },
+    { id:'arq-2', range:'17-23 ago', start:'2026-08-17', end:'2026-08-23',
+      tema:'Notas: Álgebra de Boole — Práctico 2: Representación Interna en Programas (Taller 2)',
+      materials:[ mat(BASE.arqGuias,'Practico 2 - Resuelto Paso a Paso.pdf','Práctico 2 resuelto') ] },
+    { id:'arq-3', range:'24-30 ago', start:'2026-08-24', end:'2026-08-30',
+      tema:'Notas: Circuitos Combinatorios, Memorias ROM — Práctico 3: Álgebra de Boole, método de Karnaugh, circuitos lógicos combinatorios (Taller 3)', materials:[] },
+    { id:'arq-4', range:'31 ago - 6 sep', start:'2026-08-31', end:'2026-09-06',
+      tema:'Notas: Flip-Flop, Contadores, Memorias RAM — Práctico 4: Memorias ROM (Taller 4)', materials:[] },
+    { id:'arq-5', range:'7-13 sep', start:'2026-09-07', end:'2026-09-13',
+      tema:'Notas: Máquinas de Estado, Circuitos Secuenciales, Máquina Lógica General, Arquitectura Von Neumann — Práctico 5: Contadores (Taller 5)', materials:[] },
+    { id:'arq-6', range:'14-20 sep', start:'2026-09-14', end:'2026-09-20',
+      tema:'Notas: Organización de la CPU — Práctico 6: Formato de instrucción (Taller 6)', materials:[] },
+    { id:'arq-7', range:'21-23 sep', start:'2026-09-21', end:'2026-09-23',
+      tema:'Repaso final pre-parcial',
+      materials:[ mat(BASE.arqGuias,'Guia de Notacion y Redaccion Exacta - Primer Parcial.pdf','Guía de notación exacta'),
+                  mat(BASE.arqGuias,'Parcial 2021 - Resuelto con Metodologia Detallada.pdf','Parcial 2021 resuelto') ] },
+    { id:'arq-8', range:'24 sep', start:'2026-09-24', end:'2026-09-24',
+      tema:'1er Parcial ArqComp', materials:[] },
+    { id:'arq-9', range:'25 sep - 31 dic', start:'2026-09-25', end:'2026-12-31',
+      tema:'M6-M10 (8086, E/S, Interrupciones, Pipelining, Caché) — 2do parcial: fecha a definir', materials:[] },
+  ],
+  temas:[
+    { label:'Primer Parcial (M1-M5)', items:[
+      { tema:'M1 — Sistemas de Numeración, Códigos de Error, Repr. Interna de Datos (bases, enteros, IEEE 754)', start:'2026-08-03', end:'2026-08-23',
+        materials:[ mat(BASE.arqGuias,'Semana 01 - Sistemas de Numeracion y Codigos de Error.pdf','Guía — Sistemas de Numeración'),
+                    mat(BASE.arqGuias,'Practico 0 - Resuelto Paso a Paso.pdf','Práctico 0 resuelto'),
+                    mat(BASE.arqGuias,'Semana 02 - Representacion Interna de Datos.pdf','Guía — Repr. Interna de Datos'),
+                    mat(BASE.arqGuias,'Practico 1 - Resuelto Paso a Paso.pdf','Práctico 1 resuelto'),
+                    mat(BASE.arqGuias,'Practico 2 - Resuelto Paso a Paso.pdf','Práctico 2 resuelto (manipulación de bits en C)') ] },
+      { tema:'M2 — Álgebra de Boole, Circuitos Combinatorios, método de Karnaugh', start:'2026-08-24', end:'2026-08-30', materials:[] },
+      { tema:'M3 — Memorias ROM, Flip-Flop, Contadores, Memorias RAM', start:'2026-08-31', end:'2026-09-06', materials:[] },
+      { tema:'M4 — Máquinas de Estado, Circuitos Secuenciales, Máquina Lógica General', start:'2026-09-07', end:'2026-09-13', materials:[] },
+      { tema:'M5 — Arquitectura de Von Neumann y Organización de la CPU', start:'2026-09-14', end:'2026-09-20', materials:[] },
+      { tema:'Referencias generales para el parcial', start:'2026-09-21', end:'2026-09-23',
+        materials:[ mat(BASE.arqGuias,'Guia de Notacion y Redaccion Exacta - Primer Parcial.pdf','Guía de notación exacta'),
+                    mat(BASE.arqGuias,'Parcial 2021 - Resuelto con Metodologia Detallada.pdf','Parcial 2021 resuelto') ] },
+      { tema:'🔴 1er Parcial ArqComp', start:'2026-09-24', end:'2026-09-24', materials:[] },
+    ]},
+    { label:'Segundo Parcial (M6-M10) — cronograma semanal a definir', items:[
+      { tema:'M6 — Ensamblador 8086', start:null, end:null, materials:[] },
+      { tema:'M7 — Entrada/Salida', start:null, end:null, materials:[] },
+      { tema:'M8 — Interrupciones', start:null, end:null, materials:[] },
+      { tema:'M9 — Pipelining', start:null, end:null, materials:[] },
+      { tema:'M10 — Jerarquía de Memoria y Caché', start:null, end:null, materials:[] },
+    ]},
+  ]
+};
+
+const MATERIAS = [prog3, pye, arq];
+
+// ---------- Utilidades de fecha ----------
+// índice del ítem de una materia cuyo rango contiene una fecha dada (para alinear por semana calendario)
+function findIndexForDate(weeks, dateObj){
+  for(let i=0;i<weeks.length;i++){
+    const s = new Date(weeks[i].start), e = new Date(weeks[i].end);
+    if(dateObj>=s && dateObj<=e) return i;
+  }
+  if(dateObj < new Date(weeks[0].start)) return 0;
+  return weeks.length-1;
+}
+
+function fmt(d){ return `${d.getDate()}/${d.getMonth()+1}`; }
+function mondayOf(d){
+  const day = (d.getDay()+6)%7; // lunes=0
+  const m = new Date(d);
+  m.setDate(d.getDate()-day);
+  m.setHours(0,0,0,0);
+  return m;
+}
+
+// ---------- Grilla de semanas globales (lunes a domingo), unificada entre materias ----------
+const allStarts = MATERIAS.flatMap(m => m.weeks.map(w => new Date(w.start)));
+const allEnds = MATERIAS.flatMap(m => m.weeks.map(w => new Date(w.end)));
+const globalStart = mondayOf(new Date(Math.min(...allStarts)));
+const globalEnd = new Date(Math.max(...allEnds));
+
+const GLOBAL_WEEKS = [];
+{
+  let cursor = new Date(globalStart);
+  while(cursor <= globalEnd){
+    const start = new Date(cursor);
+    const end = new Date(cursor); end.setDate(end.getDate()+6);
+    GLOBAL_WEEKS.push({ start, end, label: `${fmt(start)} - ${fmt(end)}` });
+    cursor.setDate(cursor.getDate()+7);
+  }
+}
+
+function findGlobalWeekIndexForToday(){
+  const today = new Date(); today.setHours(0,0,0,0);
+  for(let i=0;i<GLOBAL_WEEKS.length;i++){
+    if(today>=GLOBAL_WEEKS[i].start && today<=GLOBAL_WEEKS[i].end) return i;
+  }
+  return today < GLOBAL_WEEKS[0].start ? 0 : GLOBAL_WEEKS.length-1;
+}
+
+// ---------- Estado ----------
+let homeWeekIndex = findGlobalWeekIndexForToday();
+let currentView = 'home'; // 'home' | materia.key
+let calMonth = (()=>{ const d=new Date(); d.setDate(1); d.setHours(0,0,0,0); return d; })();
+let calSelected = toISO(new Date());
+
+// ---------- Calendario de tareas (persistido en localStorage) ----------
+const DOW_ES = ['L','M','X','J','V','S','D'];
+const MONTHS_ES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const TASKS_KEY = 'panelEstudioTasks';
+
+function toISO(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function loadTasks(){ try{ return JSON.parse(localStorage.getItem(TASKS_KEY) || '{}'); } catch(e){ return {}; } }
+function saveTasks(t){ localStorage.setItem(TASKS_KEY, JSON.stringify(t)); }
+
+function renderCalendar(){
+  const tasks = loadTasks();
+  const y = calMonth.getFullYear(), m = calMonth.getMonth();
+  document.getElementById('cal-month-label').textContent = `${MONTHS_ES[m]} ${y}`;
+
+  document.getElementById('cal-dow-row').innerHTML = DOW_ES.map(d => `<div class="cal-dow">${d}</div>`).join('');
+
+  const firstDay = new Date(y, m, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // lunes=0
+  const daysInMonth = new Date(y, m + 1, 0).getDate();
+  const todayIso = toISO(new Date());
+
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+  for(let i=0; i<startOffset; i++){
+    const empty = document.createElement('div');
+    empty.className = 'cal-day empty';
+    grid.appendChild(empty);
+  }
+  for(let day=1; day<=daysInMonth; day++){
+    const iso = toISO(new Date(y, m, day));
+    const cell = document.createElement('button');
+    cell.className = 'cal-day' + (iso===todayIso ? ' today' : '') + (iso===calSelected ? ' selected' : '');
+    const hasTasks = tasks[iso] && tasks[iso].length > 0;
+    cell.innerHTML = `<span>${day}</span>${hasTasks ? '<i class="cal-dot"></i>' : ''}`;
+    cell.onclick = () => { calSelected = iso; renderCalendar(); };
+    grid.appendChild(cell);
+  }
+
+  const tasksEl = document.getElementById('cal-tasks');
+  const selDate = new Date(calSelected + 'T00:00:00');
+  const label = selDate.toLocaleDateString('es-UY', {weekday:'long', day:'numeric', month:'long'});
+  const list = tasks[calSelected] || [];
+  tasksEl.innerHTML = `
+    <div class="cal-selected-label">${label}</div>
+    <div class="cal-task-list">
+      ${list.length ? list.map((t,i) => `<div class="cal-task-item"><span>${t}</span><button class="cal-task-del" data-i="${i}">×</button></div>`).join('') : '<div class="empty">Sin tareas para este día.</div>'}
+    </div>
+    <div class="cal-add-row">
+      <input type="text" id="cal-task-input" placeholder="Agregar tarea o repaso…" />
+      <button class="nav-btn" id="cal-task-add">+</button>
+    </div>
+  `;
+
+  tasksEl.querySelectorAll('.cal-task-del').forEach(btn => {
+    btn.onclick = () => {
+      const i = parseInt(btn.dataset.i, 10);
+      const t = loadTasks();
+      t[calSelected].splice(i, 1);
+      if(t[calSelected].length === 0) delete t[calSelected];
+      saveTasks(t);
+      renderCalendar();
+    };
+  });
+  const input = document.getElementById('cal-task-input');
+  const addTask = () => {
+    const val = input.value.trim();
+    if(!val) return;
+    const t = loadTasks();
+    if(!t[calSelected]) t[calSelected] = [];
+    t[calSelected].push(val);
+    saveTasks(t);
+    renderCalendar();
+  };
+  document.getElementById('cal-task-add').onclick = addTask;
+  input.onkeydown = (e) => { if(e.key === 'Enter') addTask(); };
+
+  document.getElementById('cal-prev').onclick = () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); };
+  document.getElementById('cal-next').onclick = () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); };
+}
+
+function materialsHtml(w){
+  return w.materials.length
+    ? w.materials.map(mm => `<a href="${mm.href}" target="_blank">${mm.label}</a>`).join('')
+    : '<div class="empty">Sin material generado todavía para esta semana.</div>';
+}
+
+// ---------- Render sidebar ----------
+function renderSidebar(){
+  const el = document.getElementById('sidebar-content');
+  el.innerHTML = '';
+
+  const home = document.createElement('button');
+  home.className = 'nav-item' + (currentView==='home' ? ' active' : '');
+  home.innerHTML = `Panel principal`;
+  home.onclick = () => { currentView='home'; render(); };
+  el.appendChild(home);
+
+  MATERIAS.forEach(m => {
+    const btn = document.createElement('button');
+    btn.className = 'nav-item' + (currentView===m.key ? ' active' : '');
+    btn.innerHTML = `<span class="dot ${m.dotClass}"></span>${m.name}<span class="count">${m.weeks.length}</span>`;
+    btn.onclick = () => { currentView=m.key; render(); };
+    el.appendChild(btn);
+  });
+}
+
+// ---------- Render home (overview unificado por semana) ----------
+function renderHome(){
+  const main = document.getElementById('main');
+  const gw = GLOBAL_WEEKS[homeWeekIndex];
+  const isCurrentGlobalWeek = homeWeekIndex === findGlobalWeekIndexForToday();
+
+  main.innerHTML = `
+    <h2>Panel principal</h2>
+    <div class="today" id="today-label"></div>
+    <div class="week-card">
+      <div class="week-card-head">
+        <div>
+          <div class="week-label">Semana del ${gw.label}${isCurrentGlobalWeek ? '<span class="badge-current">ACTUAL</span>' : ''}</div>
+        </div>
+        <div class="week-nav">
+          <button class="nav-btn" id="wk-prev" ${homeWeekIndex===0?'disabled':''}>‹</button>
+          <button class="nav-btn" id="wk-next" ${homeWeekIndex===GLOBAL_WEEKS.length-1?'disabled':''}>›</button>
+        </div>
+      </div>
+      <div class="materia-rows" id="materia-rows"></div>
+    </div>
+
+    <div class="calendar-card">
+      <div class="cal-head">
+        <div class="cal-month-label" id="cal-month-label"></div>
+        <div class="week-nav">
+          <button class="nav-btn" id="cal-prev">‹</button>
+          <button class="nav-btn" id="cal-next">›</button>
+        </div>
+      </div>
+      <div class="cal-dow-row" id="cal-dow-row"></div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <div class="cal-tasks" id="cal-tasks"></div>
+    </div>
+  `;
+  document.getElementById('today-label').textContent =
+    'Hoy: ' + new Date().toLocaleDateString('es-UY', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  renderCalendar();
+
+  const rowsEl = document.getElementById('materia-rows');
+  MATERIAS.forEach(m => {
+    const idx = findIndexForDate(m.weeks, gw.start);
+    const w = m.weeks[idx];
+    const row = document.createElement('div');
+    row.className = 'materia-row';
+    row.innerHTML = `
+      <div class="materia-row-head" data-open="${m.key}">
+        <span class="dot ${m.dotClass}"></span>
+        <span class="m-name">${m.name}</span>
+      </div>
+      <div class="tema">${w.tema}</div>
+      <button class="see-material-link" data-open="${m.key}">Ver material de esta materia →</button>
+    `;
+    rowsEl.appendChild(row);
+  });
+
+  rowsEl.querySelectorAll('[data-open]').forEach(el => {
+    el.onclick = () => { currentView = el.dataset.open; render(); };
+  });
+  document.getElementById('wk-prev').onclick = () => shiftHomeWeek(-1);
+  document.getElementById('wk-next').onclick = () => shiftHomeWeek(1);
+}
+
+function shiftHomeWeek(delta){
+  const newIdx = homeWeekIndex + delta;
+  if(newIdx>=0 && newIdx<GLOBAL_WEEKS.length){
+    homeWeekIndex = newIdx;
+    renderHome();
+  }
+}
+
+// ---------- Render vista de materia completa (árbol de temas) ----------
+function isItemCurrent(item){
+  if(!item.start || !item.end) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return today >= new Date(item.start) && today <= new Date(item.end);
+}
+function isItemPast(item){
+  if(!item.end) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return today > new Date(item.end);
+}
+function itemRangeLabel(item){
+  if(!item.start || !item.end) return '';
+  const s = new Date(item.start), e = new Date(item.end);
+  return item.start === item.end ? fmt(s) : `${fmt(s)} - ${fmt(e)}`;
+}
+
+function renderMateriaPage(m){
+  const main = document.getElementById('main');
+  const totalTemas = m.temas.reduce((n,g)=>n+g.items.length, 0);
+  main.innerHTML = `
+    <button class="back-link" id="back-btn">‹ Volver al panel principal</button>
+    <div class="materia-page-head">
+      <span class="dot ${m.dotClass}"></span>
+      <h2>${m.name}</h2>
+    </div>
+    <div class="today">${totalTemas} temas del curso · todo el material subido hasta ahora, agrupado por tema</div>
+    <div id="tema-groups"></div>
+  `;
+  document.getElementById('back-btn').onclick = () => { currentView='home'; render(); };
+
+  const container = document.getElementById('tema-groups');
+  let currentEl = null;
+  m.temas.forEach(group => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'tema-group';
+    groupEl.innerHTML = `<div class="tema-group-label">${group.label}</div>`;
+
+    const rows = document.createElement('div');
+    rows.className = 'week-rows';
+    group.items.forEach(item => {
+      const cur = isItemCurrent(item);
+      const row = document.createElement('div');
+      row.className = 'week-row' + (cur ? ' is-current' : (isItemPast(item) ? ' is-past' : ''));
+      const rangeLabel = itemRangeLabel(item);
+      row.innerHTML = `
+        <div class="week-row-top">
+          <div class="wr-tema" style="margin:0;">${item.tema}${cur ? '<span class="badge-current">ACTUAL</span>' : ''}</div>
+          ${rangeLabel ? `<div class="wr-range">${rangeLabel}</div>` : ''}
+        </div>
+        <div class="materials">${materialsHtml(item)}</div>
+      `;
+      rows.appendChild(row);
+      if(cur) currentEl = row;
+    });
+    groupEl.appendChild(rows);
+    container.appendChild(groupEl);
+  });
+
+  if(currentEl){
+    setTimeout(()=> currentEl.scrollIntoView({behavior:'smooth', block:'center'}), 50);
+  }
+}
+
+// ---------- Router ----------
+function render(){
+  renderSidebar();
+  if(currentView === 'home'){
+    renderHome();
+  } else {
+    const m = MATERIAS.find(x=>x.key===currentView);
+    renderMateriaPage(m);
+  }
+}
+
+render();
+</script>
+</body>
+</html>
