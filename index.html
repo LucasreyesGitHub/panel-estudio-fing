@@ -345,13 +345,20 @@ const arq = {
 const MATERIAS = [prog3, pye, arq];
 
 // ---------- Utilidades de fecha ----------
+// Parsea "YYYY-MM-DD" como fecha LOCAL (new Date(string) lo parsea como UTC,
+// lo cual corre todo un día para atrás en husos negativos como UY — ese fue el bug).
+function parseLocalDate(s){
+  const [y, mo, d] = s.split('-').map(Number);
+  return new Date(y, mo - 1, d);
+}
+
 // índice del ítem de una materia cuyo rango contiene una fecha dada (para alinear por semana calendario)
 function findIndexForDate(weeks, dateObj){
   for(let i=0;i<weeks.length;i++){
-    const s = new Date(weeks[i].start), e = new Date(weeks[i].end);
+    const s = parseLocalDate(weeks[i].start), e = parseLocalDate(weeks[i].end);
     if(dateObj>=s && dateObj<=e) return i;
   }
-  if(dateObj < new Date(weeks[0].start)) return 0;
+  if(dateObj < parseLocalDate(weeks[0].start)) return 0;
   return weeks.length-1;
 }
 
@@ -365,8 +372,8 @@ function mondayOf(d){
 }
 
 // ---------- Grilla de semanas globales (lunes a domingo), unificada entre materias ----------
-const allStarts = MATERIAS.flatMap(m => m.weeks.map(w => new Date(w.start)));
-const allEnds = MATERIAS.flatMap(m => m.weeks.map(w => new Date(w.end)));
+const allStarts = MATERIAS.flatMap(m => m.weeks.map(w => parseLocalDate(w.start)));
+const allEnds = MATERIAS.flatMap(m => m.weeks.map(w => parseLocalDate(w.end)));
 const globalStart = mondayOf(new Date(Math.min(...allStarts)));
 const globalEnd = new Date(Math.max(...allEnds));
 
@@ -576,16 +583,16 @@ function shiftHomeWeek(delta){
 function isItemCurrent(item){
   if(!item.start || !item.end) return false;
   const today = new Date(); today.setHours(0,0,0,0);
-  return today >= new Date(item.start) && today <= new Date(item.end);
+  return today >= parseLocalDate(item.start) && today <= parseLocalDate(item.end);
 }
 function isItemPast(item){
   if(!item.end) return false;
   const today = new Date(); today.setHours(0,0,0,0);
-  return today > new Date(item.end);
+  return today > parseLocalDate(item.end);
 }
 function itemRangeLabel(item){
   if(!item.start || !item.end) return '';
-  const s = new Date(item.start), e = new Date(item.end);
+  const s = parseLocalDate(item.start), e = parseLocalDate(item.end);
   return item.start === item.end ? fmt(s) : `${fmt(s)} - ${fmt(e)}`;
 }
 
