@@ -131,22 +131,17 @@
 </div>
 
 <script>
-// ---------- Rutas base ----------
+// ---------- Rutas base (relativas al repo, funcionan local y publicado) ----------
 const BASE = {
-  prog3Guias:  "C:\\Users\\pc\\Desktop\\Study for Claude\\Guias de Estudio Programación 3\\",
-  arqGuias:    "C:\\Users\\pc\\Desktop\\Study for Claude\\Guias de Estudio Arquitectura de Computadoras\\",
-  pyeApuntes:  "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\Apuntes\\",
-  pyeEjerc:    "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\Ejercicios\\",
-  pyeRaiz:     "C:\\Users\\pc\\Desktop\\Study for Claude\\Guia de Estudio PyE\\",
+  prog3Guias:  "material/prog3/",
+  arqGuias:    "material/arq/",
+  pyeApuntes:  "material/pye/apuntes/",
+  pyeEjerc:    "material/pye/ejercicios/",
+  pyeRaiz:     "material/pye/",
 };
 
-function toFileUri(path){
-  const parts = path.replace(/\\/g,'/').split('/');
-  const encoded = parts.map((seg,i)=> i===0 ? seg : encodeURIComponent(seg));
-  return 'file:///' + encoded.join('/');
-}
 function mat(base, filename, label){
-  return { label: label, href: toFileUri(base + filename) };
+  return { label: label, href: encodeURI(base + filename) };
 }
 
 // ---------- Datos: Programación 3 ----------
